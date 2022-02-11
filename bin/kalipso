@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# Git stats for the montly report
+#
+# Globals:
+#   None
+# Arguments:
+#   p: Path to the git repository (default is the current directory)
+#   b: Branch to use (default is master)
+#   s: Start date (default is the first day of the current month)
+#   e: End date (default is the current date)
+# Returns:
+#   None
+# Author:
+#   Jesus Magallon <jesus@yosoydev.net>
+# -------------------------------------------------------
+
+GIT_PATH="$(pwd)"
+GIT_BRANCH="master"
+START_DATE="$(date +%Y-%m-01)"
+END_DATE="$(date +%Y-%m-%d)"
+
+while getopts p:b:s:e: flag
+do
+    case "${flag}" in
+        p) GIT_PATH=${OPTARG};;
+        b) GIT_BRANCH=${OPTARG};;
+        s) START_DATE=${OPTARG};;
+        e) END_DATE=${OPTARG};;
+    esac
+done
+
+# Check if the path is a git repository
+if [ ! -d "$GIT_PATH/.git" ]; then
+    echo "Error: $GIT_PATH is not a git repository."
+    exit 1
+fi
+
+# Calculate the number of commits in the given range
+NUM_COMMITS=$(git log --oneline --after="${START_DATE}" --before="{$END_DATE}" ${GIT_BRANCH} | wc -l)
+
+# Calculate the number of new lines of code in the given range
+NUM_LINES=$(git log --oneline --after="${START_DATE}" --before="{$END_DATE}" ${GIT_BRANCH} | awk '{print $1}' | xargs -I{} git show {} | wc -l)
+
+echo "-------------------------------------------------------"
+echo "            Git stats for the montly report            "
+echo "                ${START_DATE} - ${END_DATE}                "
+echo "-------------------------------------------------------"
+echo ""
+
+printf " %21s %s\n" "Repository:" "$GIT_PATH ($GIT_BRANCH)"
+printf " %21s %d\n" "Commits in the month:" "$NUM_COMMITS"
+printf " %21s %d\n" "Production Releases:" "$NUM_COMMITS"
+printf " %21s %d\n" "New lines of code:" "$NUM_LINES"

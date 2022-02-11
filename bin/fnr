@@ -1,0 +1,175 @@
+#!/bin/bash
+#
+# Tool for renaming files in a directory
+#
+# Globals:
+#   None
+# Arguments:
+#   s: Disable replacement of spaces with dashes
+#   u: Disable replacement of underscores with dashes
+#   p: Disable replacement of upper case letters with lower case letters
+#   a: Disable replacement of accents with non-accented letters
+#   R: Enable ecursive replacement
+#   d: Sets the directory to work on
+#   f: Sets the file to work on
+#   h: Prints this help
+# Returns:
+#   None
+# Author:
+#   Jesus Magallon <jesus@yosoydev.net>
+# -------------------------------------------------------
+
+VERSION=1.0.0
+
+# Generic variables
+REPLACE_SPACES_WITH_DASHES=true
+REPLACE_UNDERSCORES_WITH_DASHES=true
+REPLACE_UPPERCASE_WITH_LOWERCASE=true
+REMOVE_ACCENTS_AND_SYMBOLS=true
+DO_RECURSIVE_SEARCH=false
+PRINT_HELP=false
+
+# Get current user directory path
+DIR="$(pwd)"
+FILE=false
+
+# Process arguments
+while getopts supaRhd:f: flag
+do
+    case "${flag}" in
+        s) REPLACE_SPACES_WITH_DASHES=false;;
+        u) REPLACE_UNDERSCORES_WITH_DASHES=false;;
+        p) REPLACE_UPPERCASE_WITH_LOWERCASE=false;;
+        a) REMOVE_ACCENTS_AND_SYMBOLS=false;;
+        R) DO_RECURSIVE_SEARCH=true;;
+        d) DIR="${OPTARG}";;
+        f) FILE="${OPTARG}";;
+        h) PRINT_HELP=true;;
+    esac
+done
+
+# Save ifs
+SAVEIFS=$IFS
+
+# Set IFS to newline
+IFS=$(echo -en "\n\b")
+
+# Functions
+
+# Iterate in folder
+iterate_folder() {
+    FOLDERNAME=$1
+    for FILE in $(ls -1 $FOLDERNAME)
+    do
+        # Check if file is a directory
+        if [ -d $FOLDERNAME/$FILE ]
+        then
+            # Check if recursive search is enabled
+            if [ $DO_RECURSIVE_SEARCH = true ]
+            then
+                # Iterate in directory
+                iterate_folder $FOLDERNAME/$FILE
+            else
+                exit 0
+            fi
+        else
+            # Save new filename
+            save_filename $FOLDERNAME $FILE
+        fi
+    done
+}
+
+# Format filename
+format_filename() {
+    # Get filename
+    FILENAME=$(basename "$1")
+
+    # Replace spaces with dashes
+    if [ "$REPLACE_SPACES_WITH_DASHES" = true ]; then
+        FILENAME=$(echo "$FILENAME" | sed -e 's/ /-/g')
+    fi
+
+    # Replace underscores with dashes
+    if [ "$REPLACE_UNDERSCORES_WITH_DASHES" = true ]; then
+        FILENAME=$(echo "$FILENAME" | sed -e 's/_/-/g')
+    fi
+
+    # Replace uppercase with lowercase
+    if [ "$REPLACE_UPPERCASE_WITH_LOWERCASE" = true ]; then
+        FILENAME=$(echo "$FILENAME" | tr '[:upper:]' '[:lower:]')
+    fi
+
+    # Remove accents and symbols
+    if [ "$REMOVE_ACCENTS_AND_SYMBOLS" = true ]; then
+        FILENAME=$(echo "$FILENAME" | tr -dc '[:alnum:]-_. ')
+    fi
+
+    # Return filename
+    echo "$FILENAME"
+}
+
+# Save filename
+save_filename() {
+    # Rename file
+    local filename=$(format_filename $1/$2)
+
+    # Move file to save the new name
+    mv $1/$2 $1/$filename
+}
+
+print_help() {
+    echo "FNR v$VERSION"
+    echo "Renames files in a directory."
+    echo "Copyright (C) 2022 Jesus Magallon"
+    echo ""
+    echo "Usage: fnr [OPTIONS] [DIRECTORY|FILE]"
+    echo "Options"
+    echo "  -s: Disable replacement of spaces with dashes"
+    echo "  -u: Disable replacement of underscores with dashes"
+    echo "  -p: Disable replacement of upper case letters with lower case letters"
+    echo "  -a: Disable replacement of accents with non-accented letters"
+    echo "  -R: Enable recursive search"
+    echo "  -d: Sets the directory to work on"
+    echo "  -f: Sets the file to work on"
+    echo "  -h: Prints this help"
+    echo ""
+    echo "Examples"
+    echo "  fnr -d ~/Documents/"
+    echo "  fnr -f ~/Documents/file to_ForMat-ñ.txt"
+}
+
+# Logic
+
+# Check if help is requested
+if [ "$PRINT_HELP" = true ]
+then
+    print_help
+    exit 0
+fi
+
+# Check if FILE is set
+if [[ "${FILE}" != false && -f "${FILE}" ]]; then
+    # Get filename
+    FILENAME=$(basename "$FILE")
+    # Get foldername
+    FOLDERNAME=$(dirname "$FILE")
+
+    # Save new filename
+    save_filename $FOLDERNAME $FILENAME
+
+    exit 0;
+fi
+
+# Check if DIR exists
+if [ ! -d "$DIR" ]; then
+    echo "Directory $DIR does not exist"
+    exit 1;
+fi
+
+# Run
+iterate_folder $DIR
+
+# Restore ifs
+IFS=$SAVEIFS
+
+exit 0
