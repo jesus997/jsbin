@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# Gets stats for roiback user excel report
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+# Author:
+#   Jesus Magallon <jesus@yosoydev.net>
+# -------------------------------------------------------
+
+# Get all arguments in a single string
+args=$(echo "$@")
+
+# Get the directory of the script
+script_dir=$(dirname "$0")
+
+# ruby $script_dir/roiback-stats/stats-api.rb $args
+
+# exit 1
+
+# Check if ruby is installed
+if ! which ruby > /dev/null; then
+  echo "This script requires ruby to be installed."
+  exit 1
+fi
+
+# Check if ruby version is at least 2.6.9
+ruby_version=$(ruby -v | cut -d " " -f 2)
+ruby_version_major=$(echo $ruby_version | cut -d "." -f 1)
+ruby_version_minor=$(echo $ruby_version | cut -d "." -f 2)
+ruby_version_patch=$(echo $ruby_version | cut -d "." -f 3)
+
+# If ruby patch does not number, then it is a pre-release version
+if [[ $ruby_version_patch =~ [^0-9] ]]; then
+  # Get first number in the patch
+  ruby_version_patch=$(echo $ruby_version_patch | cut -d "p" -f 1)
+fi
+
+if [ $ruby_version_major -lt 2 ] || [ $ruby_version_major -eq 2 -a $ruby_version_minor -lt 6 ] || [ $ruby_version_major -eq 2 -a $ruby_version_minor -eq 6 -a $ruby_version_patch -lt 9 ]; then
+  echo "This script requires ruby version 2.6.9 or greater."
+  exit 1
+fi
+
+GEMS="simple_xlsx_reader"
+
+# Check if spreadsheet is already gem is installed
+if ! gem list | grep -q $GEM; then
+    echo "Installing spreadsheet ($GEM) gem..."
+    gem install $GEM
+fi
+
+# run ./roiback-stats/stats.rb
+ruby $script_dir/roiback-stats/stats.rb $args
