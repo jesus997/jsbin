@@ -45,7 +45,7 @@ if [ $ruby_version_major -lt 2 ] || [ $ruby_version_major -eq 2 -a $ruby_version
   exit 1
 fi
 
-GEMS="simple_xlsx_reader"
+GEM="simple_xlsx_reader"
 
 # Check if spreadsheet is already gem is installed
 if ! gem list | grep -q $GEM; then
