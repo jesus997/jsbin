@@ -35,7 +35,7 @@ lock_folder() {
 
 lock_workdir() {
   # Set www-data user
-  sudo chown -R $USER:$GROUP $WORKDIR
+  sudo chown -R www-data:www-data $WORKDIR
   # Setup folder permissions
   find $WORKDIR -type d -exec sudo chmod 755 {} +
   # Setup file permissions
