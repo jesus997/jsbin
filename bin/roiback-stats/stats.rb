@@ -40,7 +40,7 @@ registered_by_provider = rows
   [key, value.count]
 end
 
-registered_by_provider[:total] = registered_by_provider.size
+registered_by_provider[:total] = registered_by_provider.reduce(0) { |s, a| s + a[1] }
 
 # Print the results
 
